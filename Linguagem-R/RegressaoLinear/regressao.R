@@ -12,6 +12,11 @@
 # Libraries utilizadas
 library(ggplot2)
 
+#----------------------------------------------
+# Separação dos dados em treinamento e teste
+df$sample = sample(1:10, replace = TRUE, size = nrow(df))
+treino = df[ df$sample <= 8,]
+valida = df[!df$sample <= 8,]
 
 #----------------------------------------------
 # Plot dos dados
@@ -19,12 +24,17 @@ library(ggplot2)
 #----------------------------------------------
 # Ajuste do modelo
 fit = lm(tempo_reacao ~ idade,
-         data = df)
+         data = treino)
 # Resumo
 summary(fit)
 
 # Anova
 anova(fit)
+
+# Teste da regressão
+valida$fitted = predict.lm(fit, valida)
+
+# Plot dos dados
 
 
 #----------------------------------------------
@@ -44,5 +54,5 @@ ggplot(df, aes(x = erros_normalizados, color = classe_erros)) +
   geom_histogram(aes(y=..density..), colour = 'black') 
 #  geom_density(alpha=0.2, fill = "#FF6666")
 
-names(df)
+
 
