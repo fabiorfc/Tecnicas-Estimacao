@@ -11,6 +11,7 @@
 #----------------------------------------------
 # Libraries utilizadas
 library(ggplot2)
+library(qqplotr)
 
 #----------------------------------------------
 # Separação dos dados em treinamento e teste
@@ -23,7 +24,7 @@ valida = df[!df$sample <= 8,]
 
 #----------------------------------------------
 # Ajuste do modelo
-fit = lm(tempo_reacao ~ idade,
+fit = lm(yi ~ xi,
          data = treino)
 # Resumo
 summary(fit)
@@ -40,19 +41,24 @@ valida$fitted = predict.lm(fit, valida)
 #----------------------------------------------
 # Estudo dos erros
 
+# Ajuste final do modelo
+fit = lm(yi ~ xi,
+         data = df)
+
+# Summary do modelo
+summary(fit)
+
 # Add os erros no conjuntos de dados
 df$erros = fit$residuals
 
 # Add no conjunto de dados, os erros normalizados
-df$erros_normalizados = erros_normalizados(df$erros) #Utilizando a função do outro arquivo de código
+df$erros_padronizados = erros_padronizados(df$erros) #Utilizando a função do outro arquivo de código
 
 # Add a classificação dos erros em termos de sua variabilidade 
 df$classe_erros = erros_outliers(df$erros)
 
-# Histograma dos erros
-ggplot(df, aes(x = erros_normalizados, color = classe_erros)) +
-  geom_histogram(aes(y=..density..), colour = 'black') 
-#  geom_density(alpha=0.2, fill = "#FF6666")
+# Scatter plot dos erros
+scatter_plot(xvar = df$xi, erros = df$erros_padronizados)
 
-
-
+# Ggplot dos erros
+gg_qplot(df$erros)
