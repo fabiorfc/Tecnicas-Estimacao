@@ -62,3 +62,22 @@ scatter_plot(xvar = df$xi, erros = df$erros_padronizados)
 
 # Ggplot dos erros
 gg_qplot(df$erros)
+
+
+#----------------------------------------------
+# Plot da regressão
+# Ajuste final do modelo
+fit = lm(yi ~ xi,
+         data = df)
+
+# Anexando aos dados, os valores ajustados
+df$fitted = fit$fitted.values
+
+# Plot da regressão
+ggplot() +
+  geom_point(aes(x = df$xi, y = df$yi),colour = 'black') +
+  geom_line(aes(x = df$xi,y=df$fitted),colour = 'red') +
+  
+  ggtitle('Título Geral', subtitle = 'Subtítulo')+
+  xlab('Título x')+ylab('Título y')
+

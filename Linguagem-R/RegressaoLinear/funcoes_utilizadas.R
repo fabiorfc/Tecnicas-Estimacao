@@ -101,3 +101,7 @@ gg_hist = function(erros, classe_erros, bins = 30){
           legend.text=element_text(size=10))
   
 }
+
+
+
+
