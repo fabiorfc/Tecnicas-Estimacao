@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+    
 """----------------------------------------------------------------------------
     REGRESSÃO LINEAR
 """
@@ -12,8 +13,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn import metrics
-import pickle
-import os
+
 
 
 """----------------------------------------------------------------------------
@@ -28,61 +28,75 @@ del names
 
 # Removendo os valores ? dos dados
 df['horse_power_tratado'] = df['horse_power'].apply(lambda x: None if x == "?" else x)
-df['horse_power_tratado'] = df["horse_power_tratado"].convert_objects(convert_numeric = True)
+df['horse_power_tratado'] = df['horse_power_tratado'].astype(float)
+df = df[~df['horse_power_tratado'].isna()]
 
 
 
 """----------------------------------------------------------------------------
-    Análise descritiva dos dados
+    Análises descritivas
 """
-# Descritiva geral do dataset
-df.describe()
-
-# Avaliando a matriz de correlação dos dados
-df.corr(method = 'pearson').round(3)
-
-# Plotando um gráfico de linhas da variável resposta
-fig, ax = plt.subplots(figsize=(15,4))
-ax.set_title("Values", fontsize = 20)
-ax.set_ylabel("Var Y", fontsize = 15)
-ax.set_xlabel("Var X", fontsize = 15)
-ax = df["mpg"].plot()
-
-# Plotando um boxplot dos dados
-fig1, ax1 = plt.subplots()
-ax1.set_title('Basic Plot')
-ax1.set_ylabel("Var Y", fontsize = 10)
-ax1.set_xlabel("Var X", fontsize = 10)
-ax1.boxplot(df["mpg"])
-
-fig1, ax1 = plt.subplots()
-ax1.set_title('Basic Plot')
-ax1.set_ylabel("Var Y", fontsize = 10)
-ax1.set_xlabel("Var X", fontsize = 10)
-dados_filtrados = [df["mpg"][df["cylinders"] == 4], df["mpg"][df["cylinders"] == 3]]
-ax1.boxplot(dados_filtrados)
+# Plotando um Scatter plot
+plt.xlabel("Var X")
+plt.ylabel("Var Y")
+plt.title("Scatter plot dos dados")
+plt.grid(True)
+plt.scatter(x = df["horse_power_tratado"] ,y = df["mpg"])
 
 # Plotando um histograma dos dados
 plt.xlabel("Var")
 plt.ylabel("Dist")
 plt.title("Histograma dos dados")
 plt.grid(True)
-plt.hist(df["mpg"], density = True, alpha = 0.5, color = 'g')
+plt.hist(df["horse_power_tratado"], density = True, alpha = 0.5, color = 'g')
+
+# Plotando um boxplot dos dados
+fig1, ax1 = plt.subplots()
+ax1.set_title('Basic Plot')
+ax1.set_ylabel("Var Y", fontsize = 10)
+ax1.set_xlabel("Var X", fontsize = 10)
+ax1.boxplot(df["horse_power_tratado"])
+
+
+
+"""----------------------------------------------------------------------------
+    Transformando os dados
+"""
+df["log_mpg"] = np.log(df["mpg"])
+df["log_cylinders"] = np.log(df["cylinders"])
+df["log_displacement"] = np.log(df["displacement"])
+df["log_horse_power_tratado"] = np.log(df["horse_power_tratado"])
+df["log_acceleration"] = np.log(df["acceleration"])
+df["log_weight"] = np.log(df["weight"])
 
 # Plotando um Scatter plot
 plt.xlabel("Var X")
 plt.ylabel("Var Y")
 plt.title("Scatter plot dos dados")
 plt.grid(True)
-plt.scatter(x = df["weight"] ,y = df["mpg"])
+plt.scatter(x = df["log_horse_power_tratado"] ,y = df["mpg"])
+
+# Plotando um histograma dos dados
+plt.xlabel("Var")
+plt.ylabel("Dist")
+plt.title("Histograma dos dados")
+plt.grid(True)
+plt.hist(df["log_weight"], density = True, alpha = 0.5, color = 'g')
+
+# Plotando um boxplot dos dados
+fig1, ax1 = plt.subplots()
+ax1.set_title('Basic Plot')
+ax1.set_ylabel("Var Y", fontsize = 10)
+ax1.set_xlabel("Var X", fontsize = 10)
+ax1.boxplot(df["horse_power_tratado"])
 
 
 
 """----------------------------------------------------------------------------
     Preparando a base para a regressão e estimando a regressão
 """
-y = df["mpg"]
-X = df[['cylinders', 'displacement', 'weight','acceleration', 'model_year', 'origin']]
+y = df["log_mpg"]
+X = df[['log_cylinders', 'log_displacement','log_horse_power_tratado', 'log_acceleration','log_weight']]
 
 # Separando a amostra em treinamento e teste
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
@@ -90,16 +104,16 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_
 # Instanciando o modelo de regressão
 modelo = LinearRegression()
 
-# Ajustando o modelo aos dados
+# Ajustando o modelo aos dados e fazendo a previsão
 modelo.fit(X_train, y_train)
-
+y_fitted = modelo.predict(X_test)
 
 
 """----------------------------------------------------------------------------
     Analisando os resultados
 """
-labels_das_variaveis = ['Intercept','cylinders', 'displacement', 'weight', 'acceleration', 'model_year','origin']
-betas = np.append(modelo.intercept_, modelo.coef_)
+labels_das_variaveis = ['intercept','log_cylinders', 'log_displacement','log_horse_power_tratado', 'log_acceleration','log_weight']
+betas = np.append(np.exp(modelo.intercept_), np.exp(modelo.coef_))
 
 tabela_de_parametros = pd.DataFrame(data = betas, index = labels_das_variaveis, columns = ["parametros"])
 del labels_das_variaveis, betas
@@ -108,15 +122,12 @@ del labels_das_variaveis, betas
 print("R² = {}".format(modelo.score(X_train, y_train).round(2)))
 
 # Realizando a previsão
-y_fitted = modelo.predict(X_test)
 print("R² = %s" % metrics.r2_score(y_test, y_fitted).round(2))
 
 # Avaliação do EQM e REQM
 EQM = metrics.mean_squared_error(y_true = y_test, y_pred = y_fitted).round(3)
 REQM = np.sqrt(EQM).round(3)
 print("EQM = {}, REQM = {}".format(EQM, REQM))
-
-
 
 
 
@@ -154,22 +165,48 @@ plt.hist(residuos, density = True, alpha = 0.5, color = 'g')
 
 
 """----------------------------------------------------------------------------
-    Salvando o modelo estimado
+    Comparando os resultados das transformações com os reais
 """
-# Verifiando o diretório atual
-print(os.getcwd())
 
-# Alterando o diretório atual
-os.chdir("/home/fabio/Documentos") 
+pd.DataFrame({'log_y_fitted':y_fitted,
+              'log_y_teste':y_test,
+              'y_teste':np.exp(y_test),
+              'y_fitted':np.exp(y_fitted)}).head()
 
-# Salvando o modelo
-output = open("modelo_regressao", "wb")
-pickle.dump(modelo, output)
-output.close()
 
-# Importando o modelo
-modelo2 =  open("modelo_regressao", "rb")
-lm_new = pickle.load(modelo2)
-modelo2.close()
 
+
+
+
+
+
+
+
+
+
+"""
+# Análise de correlação
+df.corr()
+
+
+plt.imshow(df.corr(), cmap="RdBu")
+plt.show()
+
+
+correlacao = df.corr()
+
+fig, ax = plt.subplots()
+im = ax.imshow(correlacao)
+
+# We want to show all ticks...
+ax.set_xticks(np.arange(df.shape[1]))
+ax.set_yticks(np.arange(df.shape[1]))
+# ... and label them with the respective list entries
+ax.set_xticklabels(df.columns)
+ax.set_yticklabels(df.columns)
+
+# Rotate the tick labels and set their alignment.
+plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
+         rotation_mode="anchor")
+"""
 
